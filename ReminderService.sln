@@ -1,0 +1,23 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# 
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReminderService.Api", "ReminderService.Api\ReminderService.Api.csproj", "{A6FCA089-11F0-4C9F-B1FE-42B9E0B7E128}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReminderService.Tests", "ReminderService.Tests\ReminderService.Tests.csproj", "{BBD0A6C3-F384-4C55-977B-D8C81CE3202C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A6FCA089-11F0-4C9F-B1FE-42B9E0B7E128}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A6FCA089-11F0-4C9F-B1FE-42B9E0B7E128}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A6FCA089-11F0-4C9F-B1FE-42B9E0B7E128}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A6FCA089-11F0-4C9F-B1FE-42B9E0B7E128}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BBD0A6C3-F384-4C55-977B-D8C81CE3202C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BBD0A6C3-F384-4C55-977B-D8C81CE3202C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BBD0A6C3-F384-4C55-977B-D8C81CE3202C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BBD0A6C3-F384-4C55-977B-D8C81CE3202C}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

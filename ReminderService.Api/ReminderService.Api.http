@@ -1,0 +1,43 @@
+@ReminderService.Api_HostAddress = http://localhost:5232
+
+### Create a reminder with email
+POST {{ReminderService.Api_HostAddress}}/reminders
+Content-Type: application/json
+
+{
+  "message": "Check API gateway logs",
+  "sendAt": "2025-10-10T14:30:00Z",
+  "email": "test@example.com"
+}
+
+### Create a reminder without email
+POST {{ReminderService.Api_HostAddress}}/reminders
+Content-Type: application/json
+
+{
+  "message": "Backup database",
+  "sendAt": "2025-12-01T09:00:00Z"
+}
+
+### Create a reminder with timezone offset
+POST {{ReminderService.Api_HostAddress}}/reminders
+Content-Type: application/json
+
+{
+  "message": "Meeting in Tokyo",
+  "sendAt": "2025-12-01T18:00:00+09:00",
+  "email": "test@example.com"
+}
+
+### Create a reminder with invalid past date (expects 400)
+POST {{ReminderService.Api_HostAddress}}/reminders
+Content-Type: application/json
+
+{
+  "message": "This should fail",
+  "sendAt": "2020-01-01T00:00:00Z"
+}
+
+### Get all reminders
+GET {{ReminderService.Api_HostAddress}}/reminders
+Accept: application/json
