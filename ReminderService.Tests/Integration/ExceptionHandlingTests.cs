@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 using ReminderService.Api.Services;
@@ -85,6 +86,7 @@ public class ExceptionHandlingTests : IClassFixture<ExceptionHandlingTests.Fault
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
             builder.UseSetting("ConnectionStrings:DefaultConnection", $"Data Source={_dbPath}");
+            builder.ConfigureLogging(logging => logging.ClearProviders());
         }
 
         protected override void Dispose(bool disposing)

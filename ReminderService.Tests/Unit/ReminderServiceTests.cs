@@ -201,7 +201,61 @@ public class ReminderServiceTests
         // Failing reminder gets retry increment
         await _repository.Received(1).IncrementRetryCountAsync(failing.Id, Arg.Any<CancellationToken>());
         // Succeeding reminder still gets marked as sent
-        await _repository.Received(1).MarkAsSentAsync(succeeding.Id, Arg.Any<DateTimeOffset>());
         await _repository.Received(1).MarkAsSentAsync(succeeding.Id, Arg.Any<DateTimeOffset>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ProcessDueRemindersAsync_CallsDeliveryService()
+    {
+        var deliveryService = Substitute.For<IReminderDeliveryService>();
+        var serviceWithDelivery = new Api.Services.ReminderService(
+            _repository,
+            Substitute.For<ILogger<Api.Services.ReminderService>>(),
+            deliveryService);
+
+        var reminder = new Reminder { Id = Guid.NewGuid(), Message = "Test" };
+        _repository.GetDueRemindersAsync(Arg.Any<CancellationToken>()).Returns(new List<Reminder> { reminder });
+
+        await serviceWithDelivery.ProcessDueRemindersAsync();
+
+        await deliveryService.Received(1).DeliverAsync(reminder);
+    }
+
+    [Fact]
+    public async Task ProcessDueRemindersAsync_WhenDeliveryFails_IncrementsRetryCount()
+    {
+        var deliveryService = Substitute.For<IReminderDeliveryService>();
+        var serviceWithDelivery = new Api.Services.ReminderService(
+            _repository,
+            Substitute.For<ILogger<Api.Services.ReminderService>>(),
+            deliveryService);
+
+        var reminder = new Reminder { Id = Guid.NewGuid(), Message = "Delivery failure", RetryCount = 0 };
+        _repository.GetDueRemindersAsync(Arg.Any<CancellationToken>()).Returns(new List<Reminder> { reminder });
+        deliveryService.DeliverAsync(reminder).ThrowsAsync(new Exception("Email service down"));
+
+        await serviceWithDelivery.ProcessDueRemindersAsync();
+
+        await _repository.Received(1).IncrementRetryCountAsync(reminder.Id, Arg.Any<CancellationToken>());
+        await _repository.DidNotReceive().MarkAsSentAsync(Arg.Any<Guid>(), Arg.Any<DateTimeOffset>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ProcessDueRemindersAsync_WhenDeliveryFailsAtMaxRetries_MarksAsFailed()
+    {
+        var deliveryService = Substitute.For<IReminderDeliveryService>();
+        var serviceWithDelivery = new Api.Services.ReminderService(
+            _repository,
+            Substitute.For<ILogger<Api.Services.ReminderService>>(),
+            deliveryService);
+
+        var reminder = new Reminder { Id = Guid.NewGuid(), Message = "Persistent delivery failure", RetryCount = 2 };
+        _repository.GetDueRemindersAsync(Arg.Any<CancellationToken>()).Returns(new List<Reminder> { reminder });
+        deliveryService.DeliverAsync(reminder).ThrowsAsync(new Exception("Email service down"));
+
+        await serviceWithDelivery.ProcessDueRemindersAsync();
+
+        await _repository.Received(1).IncrementRetryCountAsync(reminder.Id, Arg.Any<CancellationToken>());
+        await _repository.Received(1).MarkAsFailedAsync(reminder.Id, Arg.Any<CancellationToken>());
     }
 }

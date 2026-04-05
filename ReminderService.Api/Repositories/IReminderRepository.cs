@@ -4,10 +4,10 @@ namespace ReminderService.Api.Repositories;
 
 public interface IReminderRepository
 {
-    Task<Reminder> CreateAsync(Reminder reminder);
-    Task<IReadOnlyList<Reminder>> GetAllAsync();
-    Task<IReadOnlyList<Reminder>> GetDueRemindersAsync();
-    Task MarkAsSentAsync(Guid id, DateTimeOffset sentAt);
-    Task IncrementRetryCountAsync(Guid id);
-    Task MarkAsFailedAsync(Guid id);
+    Task<Reminder> CreateAsync(Reminder reminder, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<Reminder>> GetAllAsync(CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<Reminder>> GetDueRemindersAsync(CancellationToken cancellationToken = default);
+    Task MarkAsSentAsync(Guid id, DateTimeOffset sentAt, CancellationToken cancellationToken = default);
+    Task IncrementRetryCountAsync(Guid id, CancellationToken cancellationToken = default);
+    Task MarkAsFailedAsync(Guid id, CancellationToken cancellationToken = default);
 }

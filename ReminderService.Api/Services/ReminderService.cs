@@ -9,11 +9,17 @@ public class ReminderService : IReminderService
     private const int MaxRetries = 3;
 
     private readonly IReminderRepository _repository;
+    private readonly IReminderDeliveryService? _deliveryService;
     private readonly ILogger<ReminderService> _logger;
 
-    public ReminderService(IReminderRepository repository, ILogger<ReminderService> logger)
+    public ReminderService(
+        IReminderRepository repository,
+        ILogger<ReminderService> logger,
+        IReminderDeliveryService? deliveryService = null
+    )
     {
         _repository = repository;
+        _deliveryService = deliveryService;
         _logger = logger;
     }
 
@@ -49,8 +55,14 @@ public class ReminderService : IReminderService
         {
             try
             {
-                _logger.LogInformation("[{Timestamp}] Reminder sent: {Message}", DateTimeOffset.UtcNow.UtcDateTime.ToString(Converters.UtcDateTimeOffsetJsonConverter.OutputFormat), reminder.Message);
-                await _repository.MarkAsSentAsync(reminder.Id, DateTimeOffset.UtcNow);
+                if (_deliveryService is not null)
+                {
+                    await _deliveryService.DeliverAsync(reminder);
+                }
+
+                var now = DateTimeOffset.UtcNow;
+                _logger.LogInformation("[{Timestamp}] Reminder sent: {Message}", now.UtcDateTime.ToString(Converters.UtcDateTimeOffsetJsonConverter.OutputFormat), reminder.Message);
+                await _repository.MarkAsSentAsync(reminder.Id, now, cancellationToken);
             }
             catch (Exception ex)
             {

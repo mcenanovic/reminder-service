@@ -30,13 +30,23 @@ This serves the API at `https://localhost:7148` (and `http://localhost:5232`). A
 dotnet test
 ```
 
+## Design Decisions
+
+- **Minimal APIs** for endpoint definitions - for two endpoints, controllers or a library like FastEndpoints would be overkill.
+- **Dapper** for data access - with a single table and straightforward queries, Dapper gives full control over SQL without the overhead of a full ORM. Explicit SQL also makes the data access layer easier to reason about and debug.
+- **Data annotations** for request validation with a custom `StrictEmailAddressAttribute` - adding FluentValidation as a dependency for a single request model with three fields would be unnecessary overhead. A custom attribute keeps email validation strict without pulling in a library.
+- **SQLite** with auto-creation on startup (`CREATE TABLE IF NOT EXISTS`) - no migration tooling needed for a single-table schema. A composite index on `(Status, SendAt)` is created to support efficient polling for due reminders.
+- **Repository → Service → Endpoints** layering - keeps data access, business logic, and HTTP concerns separated. Each layer is behind an interface, making the code testable in isolation.
+- **BackgroundService** for reminder processing - the built-in `IHostedService` infrastructure handles lifecycle management. The worker creates a new DI scope per polling cycle to avoid captive dependency issues with scoped services.
+- **Retry logic** in the service layer - failed reminders are retried up to 3 times before being marked as `Failed`, keeping transient failures from permanently dropping reminders.
+- **Brevo integration** - email delivery is behind an `IReminderDeliveryService` interface. When no API key is configured, the service is not registered and reminders are delivered via console logging only. This keeps the default setup dependency-free while allowing real email delivery when needed.
+- **Custom UTC JSON converter** - a `UtcDateTimeOffsetJsonConverter` ensures all dates are serialized in a consistent `yyyy-MM-ddTHH:mm:ssZ` format while accepting multiple ISO 8601 input formats. This avoids ambiguity from varying client date formats and guarantees UTC throughout the system.
+- **Global exception handling middleware** - catches unhandled exceptions and returns consistent error responses without leaking internal details.
+
 ## Assumptions
 
 - There is no authentication or authorization system. Anyone can create a reminder and view all reminders in the system.
 - All application code is placed in a single API project, organized into folders by responsibility. A separate test project exists for unit and integration tests.
-- Minimal APIs are used for endpoint definitions. Adding a library like FastEndpoints or using full MVC controllers would be unnecessary for two endpoints.
-- Data annotations are used for request validation. Adding FluentValidation for this scope would be unnecessary overhead.
-- Dapper is used over Entity Framework Core. For a single-table service, Dapper provides explicit SQL without the overhead of a full ORM.
 - Reminder delivery is implemented as console logging by default. If a Brevo API key is configured, reminders with an email address will also trigger a real email via Brevo. It is assumed that a valid Brevo API key and an authorized sender email are available and can be configured in `appsettings.json`.
 - Email is optional. Reminders without an email address are still valid and are delivered via console logging only.
 - If Brevo is configured and email delivery fails, the reminder is treated as failed. This applies only when a Brevo API key is set; without it, reminders are delivered via console logging and cannot fail.
@@ -50,7 +60,7 @@ dotnet test
 - `Email`, when provided, is validated using basic format validation, which is assumed to be sufficient for this scope. An empty string is treated the same as omitting the field entirely (no email).
 - All datetime values are stored and handled in UTC, allowing users from different timezones to interact with the service consistently.
 - Once created, a reminder cannot be cancelled, modified, or removed. Only creation and listing are supported as specified in the requirements.
-- All reminders are returned in a single response with no pagination or filtering. For a production system with a growing dataset, pagination and filtering (e.g., by status or date range) would be necessary.
-- There is no rate limiting. In a production environment, a rate limiting middleware would be appropriate.
-- Sent and Failed reminders remain in the database indefinitely. A production system would benefit from an archival or cleanup policy.
+- All reminders are returned in a single response with no pagination or filtering.
+- There is no rate limiting implemented for this scope.
+- Sent and Failed reminders remain in the database indefinitely.
 - No log aggregation, monitoring, or alerting is in place. Logs are written to the console only.

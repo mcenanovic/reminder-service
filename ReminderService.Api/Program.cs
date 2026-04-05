@@ -1,3 +1,4 @@
+using ReminderService.Api.Configuration;
 using ReminderService.Api.Converters;
 using ReminderService.Api.Swagger;
 using ReminderService.Api.Database;
@@ -22,6 +23,19 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 builder.Services.AddScoped<IReminderRepository, ReminderRepository>();
 builder.Services.AddScoped<IReminderService, ReminderService.Api.Services.ReminderService>();
 builder.Services.AddHostedService<ReminderWorker>();
+
+builder.Services.Configure<BrevoSettings>(builder.Configuration.GetSection(BrevoSettings.SectionName));
+
+var brevoSettings = builder.Configuration.GetSection(BrevoSettings.SectionName).Get<BrevoSettings>();
+if (!string.IsNullOrWhiteSpace(brevoSettings?.ApiKey))
+{
+    if (string.IsNullOrWhiteSpace(brevoSettings.SenderName) || string.IsNullOrWhiteSpace(brevoSettings.SenderEmail))
+    {
+        throw new InvalidOperationException("Brevo API key is configured but SenderName and/or SenderEmail are missing. All three values are required. To disable Brevo, leave the ApiKey empty.");
+    }
+
+    builder.Services.AddScoped<IReminderDeliveryService, BrevoEmailDeliveryService>();
+}
 
 var app = builder.Build();
 
